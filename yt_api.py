@@ -13,7 +13,7 @@ def get_comments(video_id, api_key):
     while 'nextPageToken' in response.keys():
         response = get_response(
             video_id, api_key, page_token=response['nextPageToken'])
-        comment_list.update(response_to_comments(response))
+        comment_list += (response_to_comments(response))
 
     return comment_list
 
@@ -34,7 +34,7 @@ def get_response(video_id, api_key, page_token=None, max_results=100):
 
 def response_to_comments(response):
     """Converts JSON response to `comment_list` dict."""
-    comment_list = {}
+    comment_list = []
     for comment in response['items']:
         comment = comment['snippet']
         can_reply = comment['canReply']
@@ -43,7 +43,8 @@ def response_to_comments(response):
         comment_id = comment['id']
         comment = comment['snippet']
         try:
-            comment_list[comment_id] = {
+            comment_list.append({
+                'comment_id': comment_id,
                 'video_id': comment['videoId'],
                 'channel_id': comment['authorChannelId']['value'],
                 'author_display_name': comment['authorDisplayName'],
@@ -54,7 +55,7 @@ def response_to_comments(response):
                 'like_count': comment['likeCount'],
                 'can_reply': can_reply,
                 'total_reply_count': total_reply_count,
-            }
+            })
         except Exception as e:
             print(f"Error: {e}\nComment: {comment}")
             continue

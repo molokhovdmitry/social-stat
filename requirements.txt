@@ -2,3 +2,8 @@ requests
 fastapi
 uvicorn
 pydantic_settings
+torch
+torchvision
+torchaudio
+transformers
+pandas
