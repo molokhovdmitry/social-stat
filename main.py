@@ -8,6 +8,8 @@ from models import init_emotions_model
 
 class Settings(BaseSettings):
     YT_API_KEY: str
+    PRED_BATCH_SIZE: int
+    MAX_COMMENT_SIZE: int
     model_config = SettingsConfigDict(env_file='.env')
 
 
@@ -25,12 +27,21 @@ def home():
 @app.get('/predict')
 def predict(video_id):
     # Get comments
-    comments = get_comments(video_id, settings.YT_API_KEY)
+    comments = get_comments(
+        video_id,
+        settings.MAX_COMMENT_SIZE,
+        settings.YT_API_KEY
+    )
     comments_df = pd.DataFrame(comments)
 
-    # Predict emotions
+    # Predict emotions in batches
     text_list = comments_df['text_display'].to_list()
-    preds = emotions_clf(text_list)
+    batch_size = settings.PRED_BATCH_SIZE
+    text_batches = [text_list[i:i + batch_size]
+                    for i in range(0, len(text_list), batch_size)]
+    preds = []
+    for batch in text_batches:
+        preds.extend(emotions_clf(batch))
 
     # Add predictions to DataFrame
     preds_df = []
