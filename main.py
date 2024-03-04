@@ -8,8 +8,8 @@ from models import init_emotions_model
 
 class Settings(BaseSettings):
     YT_API_KEY: str
-    PRED_BATCH_SIZE: int
-    MAX_COMMENT_SIZE: int
+    PRED_BATCH_SIZE: int = 512
+    MAX_COMMENT_SIZE: int = 300
     model_config = SettingsConfigDict(env_file='.env')
 
 

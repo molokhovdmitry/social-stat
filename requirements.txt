@@ -7,3 +7,5 @@ torchvision
 torchaudio
 transformers
 pandas
+pytest
+httpx
