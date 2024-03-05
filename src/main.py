@@ -2,8 +2,8 @@ from fastapi import FastAPI, Response
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import pandas as pd
 
-from yt_api import get_comments
-from models import init_emotions_model
+from src.yt_api import get_comments
+from src.models import init_emotions_model
 
 
 class Settings(BaseSettings):
