@@ -2,7 +2,7 @@
 API application for social network analysis.
 
 # Endpoints
-## Get /predict/{video_id}
+## GET `/predict/{video_id}`
 Returns `pandas` DataFrame with all `commentThreads` of a `YouTube` video with emotion scores estimated by [SamLowe/roberta-base-go_emotions](https://huggingface.co/SamLowe/roberta-base-go_emotions).
 <details>
 <summary>All DataFrame columns:</summary>
