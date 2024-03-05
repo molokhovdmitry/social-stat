@@ -1,4 +1,4 @@
-# Script for the automatic startup on a virtual machine.
+# Script for an automatic startup on a virtual machine.
 . /home/user/python_venv/social-stat/bin/activate
 cd /home/user/social-stat
 git pull
