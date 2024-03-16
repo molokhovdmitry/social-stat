@@ -39,18 +39,13 @@ def predict(video_id):
     batch_size = settings.PRED_BATCH_SIZE
     text_batches = [text_list[i:i + batch_size]
                     for i in range(0, len(text_list), batch_size)]
-    preds = []
-    for batch in text_batches:
-        preds.extend(emotions_clf(batch))
+    preds = [comment_emotions
+             for text_batch in text_batches
+             for comment_emotions in emotions_clf(text_batch)]
 
     # Add predictions to DataFrame
-    preds_df = []
-    for pred in preds:
-        pred_dict = {}
-        for emotion in pred:
-            pred_dict[emotion['label']] = emotion['score']
-        preds_df.append(pred_dict)
-    preds_df = pd.DataFrame(preds_df)
+    preds_df = pd.DataFrame([{emotion['label']: emotion['score']
+                              for emotion in pred} for pred in preds])
     comments_df = pd.concat([comments_df, preds_df], axis=1)
 
     # Return DataFrame as a JSON file
