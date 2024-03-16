@@ -2,7 +2,7 @@ from fastapi import FastAPI, Response
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import pandas as pd
 
-from src.yt_api import get_comments
+from src.yt_api import YouTubeAPI
 from src.models import init_emotions_model
 
 
@@ -17,6 +17,10 @@ settings = Settings()
 app = FastAPI(title='social-stat')
 
 emotions_clf = init_emotions_model()
+yt_api = YouTubeAPI(
+    api_key=settings.YT_API_KEY,
+    max_comment_size=settings.MAX_COMMENT_SIZE
+)
 
 
 @app.get('/')
@@ -27,11 +31,7 @@ def home():
 @app.get('/predict')
 def predict(video_id):
     # Get comments
-    comments = get_comments(
-        video_id,
-        settings.MAX_COMMENT_SIZE,
-        settings.YT_API_KEY
-    )
+    comments = yt_api.get_comments(video_id)
     comments_df = pd.DataFrame(comments)
 
     # Predict emotions in batches
