@@ -34,6 +34,10 @@ class YouTubeAPI():
             'pageToken': page_token,
         }
         response = requests.get(url, params=payload)
+
+        # Ensure it's not a bad request
+        assert response.status_code != 400
+
         return response.json()
 
     def response_to_comments(self, response):
