@@ -12,6 +12,7 @@ from sklearn.decomposition import NMF
 from sklearn.manifold import TSNE
 
 from yt_api import YouTubeAPI
+from maps import lang_map
 
 
 # Load app settings
@@ -19,6 +20,7 @@ load_dotenv()
 YT_API_KEY = os.getenv('YT_API_KEY')
 MAX_COMMENT_SIZE = int(os.getenv('MAX_COMMENT_SIZE'))
 PRED_BATCH_SIZE = int(os.getenv('PRED_BATCH_SIZE'))
+LANG_DETECTION_CONF = float(os.getenv('LANG_DETECTION_CONF'))
 
 
 @st.cache_resource
@@ -35,6 +37,13 @@ def init_emotions_model():
 def init_embedding_model():
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     return model
+
+
+@st.cache_resource
+def init_lang_model():
+    model_ckpt = "papluca/xlm-roberta-base-language-detection"
+    pipe = pipeline("text-classification", model=model_ckpt)
+    return pipe
 
 
 def predict_emotions(df, clf):
@@ -60,6 +69,29 @@ def predict_emotions(df, clf):
     return df
 
 
+def detect_languages(df, clf):
+    """
+    Detects languages for every `text_original` in a DataFrame `df` with a
+    classifier `clf`. Takes the language with the highest score.
+    Returns a DataFrame with `predicted_language` column.
+    """
+    # Detect languages in batches
+    text_list = df['text_original'].to_list()
+    batch_size = PRED_BATCH_SIZE
+    text_batches = [text_list[i:i + batch_size]
+                    for i in range(0, len(text_list), batch_size)]
+    preds = [batch_preds[0]['label']
+             if batch_preds[0]['score'] > LANG_DETECTION_CONF
+             else None
+             for text_batch in text_batches
+             for batch_preds in clf(text_batch, top_k=1, truncation=True)]
+
+    # Add predictions to DataFrame
+    df['predicted_language'] = preds
+
+    return df
+
+
 def emotion_dist_plot(df, emotion_cols):
     """
     Creates an emotion distribution plotly figure from `df` DataFrame
@@ -78,8 +110,8 @@ def nmf_plots(df,
               tfidf_stop_words='english'
               ):
     """
-    Converts all `text_original` values of `df` DataFrame to TF-IDF features and
-    performs Non-negative matrix factorization on them.
+    Converts all `text_original` values of `df` DataFrame to TF-IDF features
+    and performs Non-negative matrix factorization on them.
 
     Returns a tuple of the modified DataFrame with NMF values and a list of
     plotly figures (`df`, [plotly figures]).
@@ -242,6 +274,7 @@ st.title("Social-Stat")
 # Load models
 emotions_clf = init_emotions_model()
 sentence_encoder = init_embedding_model()
+lang_model = init_lang_model()
 
 # Init YouTube API
 yt_api = YouTubeAPI(
@@ -306,6 +339,12 @@ with st.form(key='input'):
         options=['first_emotion', 'second_emotion']
     )
 
+    # Language Map
+    map_checkbox = st.checkbox(
+        "Language Map",
+        value=True,
+    )
+
     submit = st.form_submit_button("Analyze")
 
 
@@ -352,12 +391,16 @@ if submit:
                                        tsne_perplexity)
             plots.extend(tsne_figs)
 
-        # Show the final DataFrame
-        st.dataframe(df)
+        if map_checkbox:
+            df = detect_languages(df, lang_model)
+            map_figure = lang_map(df)
 
         # Plot all figures
         if emotions_checkbox:
             st.plotly_chart(emotion_fig, use_container_width=True)
+
+        if map_checkbox:
+            st.plotly_chart(map_figure, use_container_width=True)
 
         cols = st.columns(2)
         for i, plot in enumerate(plots):
@@ -365,3 +408,6 @@ if submit:
                 plot, sharing='streamlit',
                 theme='streamlit',
                 use_container_width=True)
+
+        # Show the final DataFrame
+        st.dataframe(df)
