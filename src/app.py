@@ -154,7 +154,8 @@ def nmf_plots(df,
                                          orientation='h',
                                          base=0),
                                   row=1, col=i+1)
-    topic_words_fig.update_layout(title_text="Topic Word Distributions")
+    topic_words_fig.update_layout(title_text="Topic Word Distributions",
+                                  showlegend=False)
 
     # Plot topic contribution for the dataset
     for col in topic_cols:
@@ -402,9 +403,8 @@ if submit:
         if map_checkbox:
             st.plotly_chart(map_figure, use_container_width=True)
 
-        cols = st.columns(2)
         for i, plot in enumerate(plots):
-            cols[i % 2].plotly_chart(
+            st.plotly_chart(
                 plot, sharing='streamlit',
                 theme='streamlit',
                 use_container_width=True)
