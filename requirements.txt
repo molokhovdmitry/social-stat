@@ -1,11 +1,12 @@
 requests
-fastapi
-uvicorn
-pydantic_settings
+python-dotenv
 torch
 torchvision
 torchaudio
 transformers
+sentence-transformers
 pandas
-pytest
-httpx
+seaborn
+plotly
+nbformat
+streamlit
