@@ -1,8 +1,8 @@
 ---
 title: Social-Stat
 emoji: 🦕
-colorFrom: black
-colorTo: orange
+colorFrom: indigo
+colorTo: pink
 sdk: streamlit
 sdk_version: 1.29.0
 app_file: src/app.py
