@@ -303,7 +303,7 @@ with st.form(key='input'):
         "Topics (NMF Components)",
         min_value=2,
         max_value=20,
-        value=10,
+        value=8,
         step=1,
     )
 
@@ -371,12 +371,14 @@ if submit:
             emotion_cols = list(df.columns[11:])
 
             # Get emotion distribution figure
-            emotion_fig = emotion_dist_plot(df, emotion_cols)
-
-            # TODO: Get emotion contribution figure
+            plots.append(emotion_dist_plot(df, emotion_cols))
 
             # Get top 2 emotions
             df = df.apply(add_top_2_emotions, axis=1)
+
+        if map_checkbox:
+            df = detect_languages(df, lang_model)
+            plots.append(lang_map(df))
 
         if nmf_checkbox:
             # NMF
@@ -392,17 +394,7 @@ if submit:
                                        tsne_perplexity)
             plots.extend(tsne_figs)
 
-        if map_checkbox:
-            df = detect_languages(df, lang_model)
-            map_figure = lang_map(df)
-
-        # Plot all figures
-        if emotions_checkbox:
-            st.plotly_chart(emotion_fig, use_container_width=True)
-
-        if map_checkbox:
-            st.plotly_chart(map_figure, use_container_width=True)
-
+        # Draw the plots
         for i, plot in enumerate(plots):
             st.plotly_chart(
                 plot, sharing='streamlit',
