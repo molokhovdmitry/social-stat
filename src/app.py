@@ -1,4 +1,5 @@
 import os
+import urllib.parse as urlparse
 from dotenv import load_dotenv
 from transformers import pipeline
 from sentence_transformers import SentenceTransformer
@@ -134,6 +135,9 @@ def nmf_plots(df,
     for i, col in enumerate(topic_cols):
         df[col] = nmf_embeddings[i]
 
+    # Create `main_topic` column with the highest value topic name
+    df['main_topic'] = df[topic_cols].apply(lambda row: row.idxmax(), axis=1)
+
     # Get word values for every topic
     word_df = pd.DataFrame(
         nmf.components_.T,
@@ -171,7 +175,7 @@ def nmf_plots(df,
     return df, [topic_words_fig, contributions_fig]
 
 
-def tsne_plots(df, encoder, emotion_cols, color_emotion, tsne_perplexity):
+def tsne_plots(df, encoder, emotion_cols, tsne_color, tsne_perplexity):
     """
     Encodes all `text_original` values of `df` DataFrame with `encoder`,
     uses t-SNE algorithm for visualization on these embeddings and on
@@ -193,12 +197,21 @@ def tsne_plots(df, encoder, emotion_cols, color_emotion, tsne_perplexity):
     # Also use predicted emotions
     if emotion_cols:
         tsne_cols = embedding_cols + emotion_cols
-        color = color_emotion
+        color = tsne_color
         hover_data = ['first_emotion', 'second_emotion', 'text_original']
     else:
         tsne_cols = embedding_cols
         color = None
-        hover_data = 'text_original'
+        hover_data = ['text_original']
+
+    if 'main_topic' in df.columns:
+        hover_data.append('main_topic')
+
+    # Color column
+    if 'main_topic' in df.columns or emotion_cols:
+        color = tsne_color
+    else:
+        color = None
 
     tsne_results = tsne.fit_transform(df[tsne_cols])
     tsne_results = pd.DataFrame(
@@ -230,7 +243,8 @@ def tsne_plots(df, encoder, emotion_cols, color_emotion, tsne_perplexity):
         hover_data=hover_data
     )
     fig3d.update_layout(
-        title_text="t-SNE Visualization Over Time"
+        title_text="t-SNE Visualization Over Time",
+        height=800
     )
 
     return df, [fig2d, fig3d]
@@ -285,7 +299,15 @@ yt_api = YouTubeAPI(
 
 # Input form
 with st.form(key='input'):
-    video_id = st.text_input("Video ID")
+    # Input
+    url_input = st.text_input("URL or ID")
+    # Get ID from URL
+    url_data = urlparse.urlparse(url_input)
+    query = urlparse.parse_qs(url_data.query)
+    if 'v' in query:
+        video_id = query['v'][0]
+    else:
+        video_id = url_input
 
     # Emotions
     emotions_checkbox = st.checkbox(
@@ -302,7 +324,7 @@ with st.form(key='input'):
     nmf_components = st.slider(
         "Topics (NMF Components)",
         min_value=2,
-        max_value=20,
+        max_value=12,
         value=8,
         step=1,
     )
@@ -335,9 +357,9 @@ with st.form(key='input'):
         step=1,
     )
 
-    tsne_color_emotion = st.selectbox(
-        "Emotion For The Plot Color",
-        options=['first_emotion', 'second_emotion']
+    tsne_color = st.selectbox(
+        "Plot Color",
+        options=['main_topic', 'first_emotion', 'second_emotion']
     )
 
     # Language Map
@@ -356,6 +378,9 @@ if submit:
         comments = yt_api.get_comments(video_id)
     except KeyError:
         st.write("Video not found.")
+        st.write(query)
+        st.write('v' in query)
+        st.write(video_id)
         bad_id = True
 
     if not bad_id:
@@ -387,10 +412,15 @@ if submit:
 
         if tsne_checkbox:
             # t-SNE visualization
+            if not nmf_checkbox:
+                tsne_color = 'first_emotion'
+            if not emotions_checkbox:
+                tsne_color = 'main_topic'
+
             df, tsne_figs = tsne_plots(df,
                                        sentence_encoder,
                                        emotion_cols,
-                                       tsne_color_emotion,
+                                       tsne_color,
                                        tsne_perplexity)
             plots.extend(tsne_figs)
 
