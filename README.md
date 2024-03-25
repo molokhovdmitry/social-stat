@@ -13,9 +13,10 @@ pinned: false
 # Social-Stat: A Streamlit Web App for Social Media Analysis
 Streamlit web application for social network analysis.
 
-[Hugging Face Space](https://huggingface.co/spaces/molokhovdmitry/social-stat)
+[Hugging Face Spaces](https://huggingface.co/spaces/molokhovdmitry/social-stat)
 
 ![social-stat](social-stat.gif)
+
 ## Features
 
 - **Emotion Prediction**: Utilizes a text classification model to predict emotions in video comments.
